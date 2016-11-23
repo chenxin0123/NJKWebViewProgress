@@ -22,9 +22,9 @@ extern const float NJKFinalProgressValue;
 typedef void (^NJKWebViewProgressBlock)(float progress);
 @protocol NJKWebViewProgressDelegate;
 @interface NJKWebViewProgress : NSObject<UIWebViewDelegate>
-@property (nonatomic, njk_weak) id<NJKWebViewProgressDelegate>progressDelegate;
-@property (nonatomic, njk_weak) id<UIWebViewDelegate>webViewProxyDelegate;
-@property (nonatomic, copy) NJKWebViewProgressBlock progressBlock;
+@property (nonatomic, njk_weak) id<NJKWebViewProgressDelegate>progressDelegate; ///< 进度改变的时候通知delegate
+@property (nonatomic, njk_weak) id<UIWebViewDelegate>webViewProxyDelegate; ///< 真实的delegate
+@property (nonatomic, copy) NJKWebViewProgressBlock progressBlock; ///< 同progressDelegate的功能 两个都会被调用
 @property (nonatomic, readonly) float progress; // 0.0..1.0
 
 - (void)reset;

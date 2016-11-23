@@ -42,7 +42,9 @@ const float NJKFinalProgressValue = 0.9f;
 {
     float progress = self.progress;
     float maxProgress = _interactive ? NJKFinalProgressValue : NJKInteractiveProgressValue;
+    
     float remainPercent = (float)_loadingCount / (float)_maxLoadCount;
+    /// 如果是0的话处理一下更好吧
     float increment = (maxProgress - progress) * remainPercent;
     progress += increment;
     progress = fmin(progress, maxProgress);
@@ -91,11 +93,14 @@ const float NJKFinalProgressValue = 0.9f;
     }
     
     BOOL isFragmentJump = NO;
+    // A Fragment URL Specifies A Location Within A Page
+    // http://blog.httpwatch.com/2011/03/01/6-things-you-should-know-about-fragment-urls/
     if (request.URL.fragment) {
         NSString *nonFragmentURL = [request.URL.absoluteString stringByReplacingOccurrencesOfString:[@"#" stringByAppendingString:request.URL.fragment] withString:@""];
         isFragmentJump = [nonFragmentURL isEqualToString:webView.request.URL.absoluteString];
     }
 
+    // mainDocumentURL would be used when loading sub-parts of a page (like images, scripts, whatever) to tell the system which cookies it can safely use when loading those sub-parts.
     BOOL isTopLevelNavigation = [request.mainDocumentURL isEqual:request.URL];
 
     BOOL isHTTPOrLocalFile = [request.URL.scheme isEqualToString:@"http"] || [request.URL.scheme isEqualToString:@"https"] || [request.URL.scheme isEqualToString:@"file"];
@@ -106,6 +111,7 @@ const float NJKFinalProgressValue = 0.9f;
     return ret;
 }
 
+/// 重定向或者异步请求会多次触发
 - (void)webViewDidStartLoad:(UIWebView *)webView
 {
     if ([_webViewProxyDelegate respondsToSelector:@selector(webViewDidStartLoad:)]) {
@@ -127,8 +133,16 @@ const float NJKFinalProgressValue = 0.9f;
     _loadingCount--;
     [self incrementProgress];
     
+    /// 当浏览器载入 HTML 文档, 它就会成为 document 对象。
+    /// document 对象是HTML文档的根节点与所有其他节点（元素节点，文本节点，属性节点, 注释节点）。
+    /// Document 对象使我们可以从脚本中对 HTML 页面中的所有元素进行访问。
+    /// 提示：Document 对象是 Window 对象的一部分，可通过 window.document 属性对其进行访问。
     NSString *readyState = [webView stringByEvaluatingJavaScriptFromString:@"document.readyState"];
 
+    /// uninitialized - 还未开始载入
+    /// loading - 载入中
+    /// interactive - 已加载，文档与用户可以开始交互
+    /// complete - 载入完成
     BOOL interactive = [readyState isEqualToString:@"interactive"];
     if (interactive) {
         _interactive = YES;
@@ -136,6 +150,7 @@ const float NJKFinalProgressValue = 0.9f;
         [webView stringByEvaluatingJavaScriptFromString:waitForCompleteJS];
     }
     
+    /// 是否被重定向
     BOOL isNotRedirect = _currentURL && [_currentURL isEqual:webView.request.mainDocumentURL];
     BOOL complete = [readyState isEqualToString:@"complete"];
     if (complete && isNotRedirect) {
